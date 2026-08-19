@@ -106,8 +106,7 @@ Answer:"""
 # --- Evaluator ---
 
 def evaluator(question: str, answer: str) -> tuple[str, str]:
-
-prompt = f"""You are a strict research editor. Your only job is to check whether this answer is complete.
+    prompt = f"""You are a strict research editor. Your only job is to check whether this answer is complete.
 
 Research question: {question}
 
@@ -117,7 +116,7 @@ Answer to evaluate:
 
 Check for these specific gaps:
 
-1. Are there major angles of this question that weren’t covered?
+1. Are there major angles of this question that weren't covered?
 
 2. Are there claims made without a named source — publication, institution, company filing, or official report?
 
@@ -135,7 +134,7 @@ Check for these specific gaps:
 
 9. Would a domain expert read this and immediately ask "but what about X?"
 
-If the answer passes all seven checks, respond with exactly:
+If the answer passes all checks, respond with exactly:
 
 VERDICT: PASS
 
@@ -146,39 +145,27 @@ VERDICT: FAIL
 GAPS:
 
 - [specific gap 1]
-
 - [specific gap 2]
 
 Be strict. If in doubt, FAIL."""
 
-response = groq_client.chat.completions.create(
+    response = groq_client.chat.completions.create(
+        model=MODEL,
+        messages=[{"role": "user", "content": prompt}],
+        max_completion_tokens=2000,
+        temperature=0,
+        reasoning_effort="low",
+    )
 
-model=MODEL,
+    evaluation = response.choices[0].message.content or ""
 
-messages=[{"role": "user", "content": prompt}],
+    if "VERDICT: PASS" in evaluation:
+        return "PASS", ""
 
-max_completion_tokens=2000,
+    gaps_match = re.search(r"GAPS:(.*)", evaluation, re.DOTALL)
+    gaps = gaps_match.group(1).strip() if gaps_match else "Gaps not specified"
 
-temperature=0,
-
-reasoning_effort="low"
-
-)
-
-evaluation = response.choices[0].message.content or ""
-
-if "VERDICT: PASS" in evaluation:
-
-return "PASS", ""
-
-else:
-
-gaps_match = re.search(r"GAPS:(.*)", evaluation, re.DOTALL)
-
-gaps = gaps_match.group(1).strip() if gaps_match else "Gaps not specified"
-
-return "FAIL", gaps
-
+    return "FAIL", gaps
 # --- Loop ---
 
 def research_loop(question: str, status_container, output_container):
