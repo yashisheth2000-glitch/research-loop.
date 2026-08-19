@@ -167,13 +167,14 @@ Be strict. If in doubt, FAIL."""
 
     return "FAIL", gaps
 # --- Loop ---
-
 def research_loop(question: str, status_container, output_container):
     feedback = ""
     final_answer = ""
 
     for round_num in range(1, MAX_ROUNDS + 1):
-        status_container.markdown(f"**Round {round_num}** — Searching...")
+        status_container.markdown(
+            f"**Round {round_num}** — Searching..."
+        )
 
         answer, sources = generator(question, feedback)
 
@@ -191,7 +192,7 @@ def research_loop(question: str, status_container, output_container):
             final_answer = answer
             break
 
-  else:
+        else:
             status_container.markdown(
                 f"**Round {round_num}** — ❌ Gaps found:\n{gaps}"
             )
