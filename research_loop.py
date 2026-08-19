@@ -21,26 +21,23 @@ MAX_ROUNDS = 4
 # --- Search ---
 
 def search(query: str) -> str:
+    results = tavily_client.search(
+        query=query,
+        search_depth="advanced",
+        max_results=5,
+        include_raw_content=False
+    )
 
-results = tavily_client.search(
+    formatted = []
 
-query=query,
+    for r in results.get("results", []):
+        formatted.append(
+            f"Source: {r['url']}\n"
+            f"Title: {r['title']}\n"
+            f"Content: {r['content']}\n"
+        )
 
-search_depth="advanced",
-
-max_results=5,
-
-include_raw_content=False
-
-)
-
-formatted = []
-
-for r in results.get("results", []):
-
-formatted.append(f"Source: {r[’url’]}\nTitle: {r[’title’]}\nContent: {r[’content’]}\n")
-
-return "\n".join(formatted)
+    return "\n".join(formatted)
 
 # --- Generator ---
 
