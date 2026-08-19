@@ -169,81 +169,81 @@ Be strict. If in doubt, FAIL."""
 # --- Loop ---
 
 def research_loop(question: str, status_container, output_container):
+    feedback = ""
+    final_answer = ""
 
-feedback = ""
+    for round_num in range(1, MAX_ROUNDS + 1):
+        status_container.markdown(f"**Round {round_num}** — Searching...")
 
-final_answer = ""
+        answer, sources = generator(question, feedback)
 
-for round_num in range(1, MAX_ROUNDS + 1):
+        status_container.markdown(
+            f"**Round {round_num}** — Evaluating completeness..."
+        )
 
-status_container.markdown(f"**Round {round_num}** — Searching...")
+        verdict, gaps = evaluator(question, answer)
 
-answer, sources = generator(question, feedback)
+        if verdict == "PASS":
+            status_container.markdown(
+                f"**Round {round_num}** — ✅ Complete"
+            )
 
-status_container.markdown(f"**Round {round_num}** — Evaluating completeness...")
+            final_answer = answer
+            break
 
-verdict, gaps = evaluator(question, answer)
+  else:
+            status_container.markdown(
+                f"**Round {round_num}** — ❌ Gaps found:\n{gaps}"
+            )
 
-if verdict == "PASS":
+            feedback = gaps
+            final_answer = answer
 
-status_container.markdown(f"**Round {round_num}** — ✅ Complete")
+            if round_num == MAX_ROUNDS:
+                status_container.markdown(
+                    f"**Round {round_num}** — ⚠️ Max rounds reached. Returning best answer."
+                )
 
-final_answer = answer
-
-break
-
-else:
-
-status_container.markdown(f"**Round {round_num}** — ❌ Gaps found:\n{gaps}")
-
-feedback = gaps
-
-final_answer = answer
-
-if round_num == MAX_ROUNDS:
-
-status_container.markdown(f"**Round {round_num}** — ⚠️ Max rounds reached. Returning best answer.")
-
-output_container.markdown("### Research Complete")
-
-output_container.markdown(final_answer)
+    output_container.markdown("### Research Complete")
+    output_container.markdown(final_answer)
 
 # --- Streamlit UI ---
 
-st.set_page_config(page_title="Research Loop", page_icon="🔍", layout="wide")
+st.set_page_config(
+    page_title="Research Loop",
+    page_icon="🔎",
+    layout="wide"
+)
 
-st.title("🔍 Research Loop")
+st.title("Research Loop")
 
-st.markdown("Ask a broad research question. The loop keeps searching until the answer is complete.")
+st.markdown(
+    "Ask a broad research question. The loop keeps searching until the answer is complete."
+)
 
 question = st.text_area(
-
-"Your research question",
-
-placeholder="e.g. What’s actually happening in the Indian D2C funding space right now?",
-
-height=100
-
+    "Your research question",
+    placeholder="e.g. What's actually happening in the Indian D2C funding space right now?",
+    height=100
 )
 
 if st.button("Run Research Loop", type="primary"):
+    if not question.strip():
+        st.error("Please enter a research question.")
+    else:
+        st.markdown("---")
 
-if not question.strip():
+        st.markdown("**Loop Progress**")
 
-st.error("Please enter a research question.")
+        status_container = st.empty()
 
-else:
+        st.markdown("---")
 
-st.markdown("---")
+        output_container = st.container()
 
-st.markdown("**Loop Progress**")
-
-status_container = st.empty()
-
-st.markdown("---")
-
-output_container = st.container()
-
-with st.spinner("Running research loop..."):
-
-research_loop(question, status_container, output_container)
+        with st.spinner("Running research loop..."):
+            research_loop(
+                question,
+                status_container,
+                output_container
+            )
