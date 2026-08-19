@@ -42,18 +42,20 @@ def search(query: str) -> str:
 # --- Generator ---
 
 def generator(question: str, feedback: str = "") -> tuple[str, str]:
+    search_query = question
 
-search_query = question
+    if feedback:
+        search_query = f"{question} {feedback}"
 
-if feedback:
+    search_results = search(search_query)
 
-search_query = f"{question} {feedback}"
+    feedback_section = (
+        f"\n\nPrevious evaluation feedback — address these gaps specifically:\n{feedback}"
+        if feedback
+        else ""
+    )
 
-search_results = search(search_query)
-
-feedback_section = f"\n\nPrevious evaluation feedback — address these gaps specifically:\n{feedback}" if feedback else ""
-
-prompt = f"""You are a research assistant producing answers for a professional Indian business newsletter.
+    prompt = f"""You are a research assistant producing answers for a professional Indian business newsletter.
 
 Your job: answer the research question below using the search results provided.
 
@@ -61,7 +63,7 @@ SOURCE RULES — these are strict and non-negotiable:
 
 - PREFER, in this order: (1) company filings, annual reports, investor presentations, earnings releases; (2) named business publications with a bylined journalist (Business Standard, Economic Times, Mint, Reuters, Bloomberg); (3) government or regulatory data.
 
-- NEVER cite: LinkedIn posts, Medium posts, personal blogs, PESTEL/SWOT analysis sites, listicles, SEO content farms, HBR case-study summaries republished by third parties, or any page that doesn’t name a specific author or institution.
+- NEVER cite: LinkedIn posts, Medium posts, personal blogs, PESTEL/SWOT analysis sites, listicles, SEO content farms, HBR case-study summaries republished by third parties, or any page that doesn't name a specific author or institution.
 
 - If a claim can only be supported by an excluded source, DROP the claim rather than cite a weak source.
 
@@ -69,7 +71,7 @@ SOURCE RULES — these are strict and non-negotiable:
 
 ANSWER RULES:
 
-- Cover all major angles — don’t stop at the first sufficient-looking answer
+- Cover all major angles — don't stop at the first sufficient-looking answer
 
 - Lead with the most recent data available (latest quarter or full year), and name the reporting period
 
@@ -89,23 +91,17 @@ Search results:
 
 Answer:"""
 
-response = groq_client.chat.completions.create(
+    response = groq_client.chat.completions.create(
+        model=MODEL,
+        messages=[{"role": "user", "content": prompt}],
+        max_completion_tokens=4000,
+        temperature=0,
+        reasoning_effort="low",
+    )
 
-model=MODEL,
+    answer = response.choices[0].message.content or ""
 
-messages=[{"role": "user", "content": prompt}],
-
-max_completion_tokens=4000,
-
-temperature=0,
-
-reasoning_effort="low"
-
-)
-
-answer = response.choices[0].message.content or ""
-
-return answer.strip(), search_results
+    return answer.strip(), search_results
 
 # --- Evaluator ---
 
